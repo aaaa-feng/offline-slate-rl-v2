@@ -1,0 +1,50 @@
+# Smoke Test: beta=10, mix_divpen, ideal_init GeMS
+# 对标旧实验 exp_beta_high_ablation_20260518 的 mix_B10
+# 短跑验证新项目是否能正确运行，指标是否与旧实验一致
+# SwanLab 写入旧项目 Offline_Slate_RL_202605 便于直接对比
+
+experiment_name: smoke_test
+seed: 58407201
+
+env_name: mix_divpen
+dataset_quality: b5
+
+ranker_type: gems
+gems_embedding_mode: ideal_init
+
+algo: iql
+beta: 10
+expectile: 0.8
+lambda_bc: 0.0
+gamma: 0.99
+iql_tau: 0.005
+reward_scale: 10.0
+label_click_mode: fake_zero
+best_checkpoint_metric: iqm
+
+max_timesteps: 5000
+batch_size: 256
+eval_freq: 500
+log_freq: 500
+save_freq: 50000
+eval_episodes: 50
+final_eval_episodes: 100
+
+hidden_dim: 256
+n_hidden: 2
+actor_lr: 0.0003
+critic_lr: 0.0003
+value_lr: 0.0003
+
+belief_hidden_dim: 20
+item_embedd_dim: 20
+num_items: 1000
+rec_size: 10
+gru_mode: qv_shared_detach
+
+actor_type: gaussian
+
+use_swanlab: true
+swan_project: Offline_Slate_RL_202605
+swan_workspace: Cliff
+swan_mode: cloud

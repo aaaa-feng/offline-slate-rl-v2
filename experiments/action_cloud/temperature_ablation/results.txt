@@ -1,0 +1,76 @@
+Temperature Ablation Results - Tue 09 Jun 2026 03:17:53 AM UTC
+============================================================
+
+=== mix_b8 final T=0.3 ===
+  Mean Reward:     62.89 +/- 23.64   Median Reward:   65.00   IQM Reward:      64.30   Unique Items:    20 
+
+=== mix_b8 final T=0.4 ===
+  Mean Reward:     61.80 +/- 21.96   Median Reward:   63.00   IQM Reward:      62.50   Unique Items:    23 
+
+=== mix_b8 final T=0.5 ===
+  Mean Reward:     68.83 +/- 25.15   Median Reward:   75.00   IQM Reward:      73.46   Unique Items:    28 
+
+=== mix_b8 final T=0.6 ===
+  Mean Reward:     65.40 +/- 26.11   Median Reward:   71.50   IQM Reward:      69.10   Unique Items:    31 
+
+=== mix_b8 final T=0.7 ===
+  Mean Reward:     54.81 +/- 17.39   Median Reward:   56.50   IQM Reward:      55.42   Unique Items:    19 
+
+=== mix_b8 final T=1.0 ===
+  Mean Reward:     71.68 +/- 25.31   Median Reward:   75.00   IQM Reward:      75.76   Unique Items:    34 
+
+=== mix_b8 best T=0.3 ===
+  Mean Reward:     62.33 +/- 22.95   Median Reward:   61.50   IQM Reward:      62.96   Unique Items:    22 
+
+=== mix_b8 best T=0.4 ===
+  Mean Reward:     62.98 +/- 22.16   Median Reward:   65.50   IQM Reward:      64.40   Unique Items:    28 
+
+=== mix_b8 best T=0.5 ===
+  Mean Reward:     62.59 +/- 21.57   Median Reward:   66.50   IQM Reward:      64.66   Unique Items:    33 
+
+=== mix_b8 best T=0.6 ===
+  Mean Reward:     55.45 +/- 22.09   Median Reward:   54.00   IQM Reward:      53.40   Unique Items:    31 
+
+=== mix_b8 best T=0.7 ===
+  Mean Reward:     52.22 +/- 17.65   Median Reward:   50.00   IQM Reward:      50.74   Unique Items:    23 
+
+=== mix_b8 best T=1.0 ===
+  Mean Reward:     202.13 +/- 57.13   Median Reward:   214.50   IQM Reward:      213.02   Unique Items:    184 
+
+=== topdown_b8 final T=0.3 ===
+  Mean Reward:     62.01 +/- 25.06   Median Reward:   68.00   IQM Reward:      65.12   Unique Items:    25 
+
+=== topdown_b8 final T=0.4 ===
+  Mean Reward:     62.77 +/- 20.14   Median Reward:   63.00   IQM Reward:      62.24   Unique Items:    40 
+
+=== topdown_b8 final T=0.5 ===
+  Mean Reward:     63.98 +/- 27.92   Median Reward:   73.50   IQM Reward:      70.78   Unique Items:    69 
+
+=== topdown_b8 final T=0.6 ===
+  Mean Reward:     41.87 +/- 17.40   Median Reward:   44.00   IQM Reward:      42.96   Unique Items:    72 
+
+=== topdown_b8 final T=0.7 ===
+  Mean Reward:     50.33 +/- 20.45   Median Reward:   52.00   IQM Reward:      51.28   Unique Items:    151 
+
+=== topdown_b8 final T=1.0 ===
+  Mean Reward:     82.58 +/- 31.48   Median Reward:   79.50   IQM Reward:      79.02   Unique Items:    476 
+
+=== topdown_b8 best T=0.3 ===
+  Mean Reward:     66.37 +/- 20.79   Median Reward:   67.50   IQM Reward:      67.60   Unique Items:    117 
+
+=== topdown_b8 best T=0.4 ===
+  Mean Reward:     59.72 +/- 21.42   Median Reward:   61.50   IQM Reward:      60.84   Unique Items:    196 
+
+=== topdown_b8 best T=0.5 ===
+  Mean Reward:     51.60 +/- 16.83   Median Reward:   51.00   IQM Reward:      52.02   Unique Items:    304 
+
+=== topdown_b8 best T=0.6 ===
+  Mean Reward:     47.25 +/- 15.64   Median Reward:   46.00   IQM Reward:      47.12   Unique Items:    446 
+
+=== topdown_b8 best T=0.7 ===
+  Mean Reward:     53.91 +/- 15.06   Median Reward:   52.00   IQM Reward:      52.64   Unique Items:    553 
+
+=== topdown_b8 best T=1.0 ===
+  Mean Reward:     184.65 +/- 82.51   Median Reward:   189.00   IQM Reward:      188.06   Unique Items:    565 
+
+Done. Results: experiments/action_cloud/temperature_ablation/results.txt

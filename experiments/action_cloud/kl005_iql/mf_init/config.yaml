@@ -1,0 +1,48 @@
+# KL=0.05 ideal_init IQL (对照组 A)
+# 与 beta_ablation_repreduce 的唯一差异: GeMS KL=0.05 vs KL=1.0
+
+experiment_name: kl005_mf_init
+seed: 58407201
+
+env_name: mix_divpen                # CLI 覆盖
+dataset_quality: b5
+
+ranker_type: gems
+gems_embedding_mode: ideal_init     # ignored, we use --gems_checkpoint
+
+algo: iql
+beta: 3.0                           # CLI 覆盖: 0/2/5/8/10
+expectile: 0.8
+lambda_bc: 0.0
+gamma: 0.99
+iql_tau: 0.005
+reward_scale: 10.0
+label_click_mode: fake_zero
+best_checkpoint_metric: iqm
+
+max_timesteps: 100000
+batch_size: 256
+eval_freq: 500
+log_freq: 500
+save_freq: 50000
+eval_episodes: 50
+final_eval_episodes: 100
+
+hidden_dim: 256
+n_hidden: 2
+actor_lr: 0.0003
+critic_lr: 0.0003
+value_lr: 0.0003
+
+belief_hidden_dim: 20
+item_embedd_dim: 20
+num_items: 1000
+rec_size: 10
+gru_mode: qv_shared_detach
+
+actor_type: gaussian
+
+use_swanlab: true
+swan_project: Offline_Slate_RL_202606
+swan_workspace: Cliff
+swan_mode: cloud

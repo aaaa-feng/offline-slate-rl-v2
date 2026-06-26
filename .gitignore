@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Large local artifacts
+data/
+checkpoints/
+logs/
+swanlog/
+backups/
+
+# Experiment-generated heavy outputs
+experiments/**/outputs/
+experiments/**/figures/
+experiments/**/analysis/figures/
+experiments/**/geometry_exports/
+experiments/**/eval_timeline/
+experiments/**/probe_outputs/
+experiments/**/baseline_results/
+experiments/**/analysis/**/*.csv
+
+# Runtime outputs
+*.log
+*.tmp
+*.npz
+*.pt
+*.ckpt
+*.pth
+*.t7
+*.tsv
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
