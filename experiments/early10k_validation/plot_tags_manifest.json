@@ -1,0 +1,19 @@
+{
+  "description": "Curated checkpoint tags for early10k_validation action latent and GRU belief panels.",
+  "tags": [
+    "step0",
+    "step25",
+    "step50",
+    "step125",
+    "step250",
+    "step1000",
+    "step3000",
+    "step5000",
+    "step8000",
+    "step10000"
+  ],
+  "notes": [
+    "The incomplete kl005_topdown_b0_ideal_init run only has available tags through step3000 for this manifest.",
+    "Plot scripts skip missing .npz files instead of failing the whole batch."
+  ]
+}

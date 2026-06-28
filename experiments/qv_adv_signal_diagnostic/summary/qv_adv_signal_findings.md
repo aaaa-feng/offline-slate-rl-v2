@@ -1,166 +1,187 @@
-# Q/V/Adv 信号诊断结论（说人话版）
+# Q/V/Adv 信号诊断结论
 
-## 我到底做了什么
+## 0. 最重要的结论
 
-我没有重新训练模型，而是拿已经训练好的 checkpoint 做离线体检。
-
-具体做法是：对同一批 replay states，准备几种不同的 action，然后问 critic：
+这个实验想回答一句话：
 
 ```text
-你觉得哪个 action 的 Q 更高？
+后期 AWR 没信号，是因为 Adv 被 V 压没了，还是因为 critic 本身已经不会判断哪个 action 更好？
 ```
 
-几种 action 是：
+答案是：**两件事都发生了，而且 Q 排序出问题的时间比 Adv 完全消失更早。**
 
-| 名字 | 人话解释 |
-|---|---|
+最关键的横向对比：
+
+```text
+step50：Adv 还有信号，Q 排序正常
+  elite_data_action > data_action > random_latent
+
+step250：Adv 仍然很高，但 Q 排序已经坏了
+  random_latent ≈/ > data_action，elite_data_action 反而不稳定
+
+step10000：Adv 变弱，Q 排序也没恢复
+  mix 里 random_latent 明显高于 data_action
+```
+
+所以不能简单粗暴地“让 Adv 一直变大”。如果 Q 排序错了，放大 Adv 只会让 actor 更认真地学错东西。
+
+---
+
+## 1. 这个 probe 到底做了什么
+
+没有重新训练，只加载已有 checkpoint 做离线诊断。
+
+对同一批 replay states，准备几类 action，然后问 critic：
+
+```text
+这些 action 里，你觉得谁的 Q 更高？
+```
+
+几类 action：
+
+| action | 人话解释 |
+| --- | --- |
 | `data_action` | 数据集里这个 state 原本对应的动作 |
-| `policy_mu` | actor 当前最想选的动作 |
-| `policy_sample` | actor 随机采样出来的动作 |
-| `elite_data_action` | 数据集中高 reward 样本对应的动作 |
-| `random_latent` | latent 空间里随机乱采的动作 |
-| `shuffled_data_action` | 别的 state 的数据动作，作为错配对照 |
+| `elite_data_action` | 高 reward dataset transition 对应的动作 proxy |
+| `random_latent` | latent 空间随机乱采的动作 |
+| `policy_mu` | actor 当前均值动作 |
+| `policy_sample` | actor 当前随机采样动作 |
+| `shuffled_data_action` | 别的 state 的数据动作，错配对照 |
 
-如果 critic 是靠谱的，理论上应该大致满足：
+这里最关心前三个：
+
+```text
+elite_data_action / data_action / random_latent
+```
+
+如果 critic 的 action ranking 健康，应该大致看到：
 
 ```text
 elite_data_action > data_action > random_latent
 ```
 
-也就是：高 reward 数据动作应该比普通数据动作好，普通数据动作应该比随机乱采好。
+注意：`elite_data_action` 不是“当前 state 的 oracle 最优动作”，而是高 reward 数据动作的 proxy。它的作用不是证明逐 state 最优，而是检查 critic 是否至少能识别“高 reward 数据动作整体上比随机动作更像好动作”。
 
 ---
 
-## 我看了哪些指标
+## 2. 看哪些指标
 
-### 1. `data_action Adv q90`
+### `data_action Adv q90`
 
-这个指标的意思是：
-
-```text
-数据动作里前 10% 比较好的动作，比当前默认水平 V 高多少
-```
-
-也就是 AWR 还能不能分清“哪些动作值得重点模仿”。
-
-如果它高，说明 Advantage 还有信号；如果它低，说明 AWR 越来越像普通 BC。
-
-第一轮结果：
+含义：数据动作里前 10% 比较好的动作，比默认水平 `V(state)` 高多少。
 
 ```text
-mix:      0.365 -> 0.135
-topdown: 0.330 -> 0.116
+Adv = Q(data_action) - V(state)
 ```
 
-结论：**Adv 后期确实变弱了。**
+人话：AWR 还能不能分清“哪些数据动作值得重点模仿”。
 
-### 2. `adv_near_zero_rate`
+### `adv_near_zero_rate`
 
-这个指标的意思是：
+含义：有多少动作的 `Q - V` 接近 0。
 
-```text
-有多少动作的 Q - V 接近 0
-```
+人话：critic 觉得多少动作“都差不多，没有谁特别值得学”。
 
-接地气说，就是 critic 觉得“这些动作都差不多，没有谁特别值得学”。
+### `Q 排序 / q_gap_vs_data_mean`
 
-第一轮结果：
+含义：换一个 action 后，它的平均 Q 比 `data_action` 高还是低。
 
-```text
-mix 10k:      约 69% 动作接近 0
-topdown 10k: 约 79% 动作接近 0
-```
-
-结论：**后期大多数训练动作对 AWR 来说没有明显区分度。**
-
-### 3. `q_gap_vs_data_mean`
-
-这个指标的意思是：
-
-```text
-换一个 action 后，critic 给的 Q 比原始 data_action 高还是低
-```
-
-例如：
+例子：
 
 ```text
 random_latent q_gap_vs_data_mean = +0.297
 ```
 
-意思就是 critic 觉得随机 latent 的 Q 平均比数据动作高 `0.297`。
-
-这很危险，因为随机动作不应该被系统性估得比数据动作更好。
+人话：critic 觉得随机 latent 平均比数据动作还好。这是明显危险信号。
 
 ---
 
-## 最关键的发现
+## 3. 横向对比：Adv 高的时候 vs 训练最后
 
-### 发现 1：Adv 后期确实没信号
+下面只列最关键的 `b8` 两条 run；`b0` 的 critic/value/Adv 形状和同 env 的 `b8` 基本一样。
 
-`data_action Adv q90` 从早期三四成掉到 10k 的一成左右。
+| Run | step | data Adv q90 | near-zero | elite Q | data Q | random Q | Q 排序 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| mix_b8 | 50 | 0.365 | 0.37 | 0.332 | 0.278 | 0.159 | elite > data > random |
+| mix_b8 | 250 | 0.465 | 0.33 | 0.511 | 0.570 | 0.573 | random > data > elite |
+| mix_b8 | 10000 | 0.135 | 0.69 | 7.406 | 7.411 | 7.708 | random > data > elite |
+| topdown_b8 | 50 | 0.330 | 0.40 | 0.329 | 0.221 | 0.101 | elite > data > random |
+| topdown_b8 | 250 | 0.363 | 0.41 | 0.372 | 0.418 | 0.474 | random > data > elite |
+| topdown_b8 | 10000 | 0.116 | 0.79 | 4.946 | 4.992 | 4.990 | data > random > elite |
 
-这说明后期 actor update 的 AWR 权重会越来越平均，策略更新越来越像普通 BC。
+### 怎么读这个表
 
-### 发现 2：不是 beta 导致 Adv 消失
+**step50 是最健康的阶段。**  
+这时 Adv 还有信号，Q 排序也符合直觉：`elite > data > random`。
 
-同一个 env 里，`b0` 和 `b8` 的 critic/value/Adv 形状几乎一样。
+**step250 是关键转折点。**  
+这时 `data Adv q90` 还很高，甚至 mix_b8 从 0.365 涨到 0.465；但 Q 排序已经坏了，`random_latent` 已经接近或超过 `data_action`，`elite_data_action` 不再稳定排在最前。
+
+**step10000 是两个问题叠加。**  
+Adv 明显变弱：mix_b8 `0.135`，topdown_b8 `0.116`；near-zero 很高：mix `69%`，topdown `79%`。同时 Q 排序也没有恢复，mix 里 `random_latent` 明显高于 `data_action`。
+
+---
+
+## 4. beta=0 和 beta=8 的关系
+
+同一个 env 下，`b0` 和 `b8` 的 critic/value/Adv 形状几乎一样。
 
 例如 mix：
 
 ```text
-mix_b8: Adv q90 0.365 -> 0.135
-mix_b0: Adv q90 0.365 -> 0.135
+mix_b8 data Adv q90: 0.365 -> 0.135
+mix_b0 data Adv q90: 0.365 -> 0.135
 ```
 
-所以 beta 主要影响 actor 怎么用 Advantage，而不是 Advantage 本身为什么消失。
-
-### 发现 3：Q 对 action 的排序也不稳
-
-如果 Q 很靠谱，`elite_data_action` 应该明显高于 `data_action`。
-
-但第一轮结果里：
+topdown 也是同样模式：
 
 ```text
-elite_data_action 后期没有稳定高于 data_action
+topdown_b8 data Adv q90: 0.330 -> 0.116
+topdown_b0 data Adv q90: 0.330 -> 0.116
 ```
 
-更糟的是 mix 后期：
+这说明：
 
 ```text
-random_latent 比 data_action 的平均 Q 更高
-10k random_latent q_gap_vs_data_mean ≈ +0.297
+beta 主要影响 actor 怎么用 Advantage；
+Adv 变弱和 Q 排序变坏，主要来自 critic/value 训练链路本身。
 ```
-
-这说明问题不只是 `V` 把 `Q-V` 压小了，critic 自己对“哪个 action 更好”的排序也开始不可靠。
 
 ---
 
-## 最终结论
+## 5. 结论：三个问题的优先级
 
-原来我们以为问题可能只是：
+### 1. Adv 后期确实变弱
+
+`data_action Adv q90` 从早期三四成掉到 10k 的一成左右；`near_zero_rate` 到 10k 变得很高。
+
+这说明后期 AWR 权重越来越平均，actor update 越来越像 BC。
+
+### 2. 但 Q 排序更早就出问题
+
+step250 时 Adv 还高，但 `random_latent` 已经能接近或超过 `data_action`。
+
+这说明问题不只是 `V` 把 `Q - V` 压小，而是 critic 在 action 维度上已经开始不可靠。
+
+### 3. 只“让 Adv 变大”不安全
+
+如果 Q 排序不可信，强行让 `Q - V` 变大，可能只是把错误排序放大。
+
+最危险的例子是 mix 后期：
 
 ```text
-V 追上 Q -> Q - V 变小 -> AWR 没信号
+random_latent q_gap_vs_data_mean ≈ +0.297
 ```
 
-现在更准确的说法是：
-
-```text
-V 确实把 Adv 压小了；
-但 Q 对 action 的局部排序也不够可信。
-```
-
-所以不能简单粗暴地“让 Adv 一直变大”。
-
-因为如果 Q 排序错了，放大 Adv 只会让 actor 更认真地学错东西，比如被拉向 random latent。
+如果这类错误 Q 被 AWR 放大，actor 可能会被拉向 OOD/random latent。
 
 ---
 
-## 下一步我建议做什么
+## 6. 下一步建议
 
-下一步不要只改 `beta`，也不要只压低 `V`。
+下一步不要只调 `beta`，也不要只压低 `V`。
 
-更合理的是做一个小训练 ablation：
+更合理的小 ablation：
 
 ```text
 baseline: 当前 IQL
@@ -169,17 +190,17 @@ variant B: 加 action ranking / contrastive critic regularizer
 variant C: A + B
 ```
 
-核心目标是让 critic 学会：
+训练时额外约束 critic 至少学会：
 
 ```text
-高 reward 动作 > 普通数据动作 > 随机动作
+Q(elite_data_action) > Q(data_action) > Q(random_latent)
 ```
 
-只有这个排序先变可靠，再让 Advantage 保持信号才有意义。
+目标不是让 Adv 数值变大，而是让 **Adv 的排序方向正确**。
 
 ---
 
-## 文件位置
+## 7. 文件位置
 
 ```text
 experiments/qv_adv_signal_diagnostic/PLAN.md
@@ -187,5 +208,3 @@ experiments/qv_adv_signal_diagnostic/scripts/probe_qv_action_ranking.py
 experiments/qv_adv_signal_diagnostic/outputs/qv_action_ranking.csv
 experiments/qv_adv_signal_diagnostic/summary/qv_adv_signal_findings.md
 ```
-
-注意：`outputs/qv_action_ranking.csv` 会被完整 probe 重新覆盖生成。
